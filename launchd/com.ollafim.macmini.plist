@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Mac Mini fleet deployment of ollafim.
+  Listens on the Tailscale IP so other fleet machines can use it,
+  proxies to corsairai's Ollama (which has qwen3-coder:latest).
+
+  Install on the mac mini:
+    scp launchd/com.ollafim.macmini.plist macmini:~/Library/LaunchAgents/com.ollafim.plist
+    ssh macmini 'launchctl load -w ~/Library/LaunchAgents/com.ollafim.plist'
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.ollafim</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/opt/homebrew/bin/python3</string>
+    <string>/Users/remotework/ollafim/ollafim.py</string>
+    <string>serve</string>
+    <string>--host</string>
+    <string>100.70.244.85</string>
+    <string>--port</string>
+    <string>11435</string>
+    <string>--ollama</string>
+    <string>http://100.94.117.48:11434</string>
+    <string>--model</string>
+    <string>qwen3-coder:latest</string>
+  </array>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>/Users/remotework/ollafim/ollafim.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/remotework/ollafim/ollafim.err.log</string>
+  <key>WorkingDirectory</key>
+  <string>/Users/remotework/ollafim</string>
+</dict>
+</plist>
