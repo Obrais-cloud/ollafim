@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Optional launchd job to run ollafim at login.
+  Install:
+    cp launchd/com.ollafim.plist ~/Library/LaunchAgents/
+    launchctl load -w ~/Library/LaunchAgents/com.ollafim.plist
+  Uninstall:
+    launchctl unload -w ~/Library/LaunchAgents/com.ollafim.plist
+    rm ~/Library/LaunchAgents/com.ollafim.plist
+  Edit the model name and paths below before installing.
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.ollafim</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/python3</string>
+    <string>__HOME__/ollafim/ollafim.py</string>
+    <string>serve</string>
+    <string>--port</string>
+    <string>11435</string>
+  </array>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>KeepAlive</key>
+  <true/>
+
+  <key>StandardOutPath</key>
+  <string>__HOME__/ollafim/ollafim.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>__HOME__/ollafim/ollafim.err.log</string>
+
+  <key>WorkingDirectory</key>
+  <string>__HOME__/ollafim</string>
+</dict>
+</plist>
