@@ -132,6 +132,38 @@ def list_local_models(ollama_url: str) -> list[dict]:
     return data.get("models", [])
 
 
+def model_identity(name: str) -> str:
+    """Resolve only an omitted tag; do not guess aliases or model families."""
+    return name if ":" in name.rsplit("/", 1)[-1] else name + ":latest"
+
+
+def health_status(ollama_url: str, model: str) -> dict:
+    """Check the selected model's catalog presence without loading it."""
+    data = http_get_json(f"{ollama_url.rstrip('/')}/api/tags")
+    catalog = data.get("models") if isinstance(data, dict) else None
+    valid = isinstance(catalog, list) and all(
+        isinstance(item, dict) and isinstance(item.get("name"), str)
+        and bool(item["name"].strip()) for item in catalog
+    )
+    available = (
+        any(model_identity(item["name"]) == model_identity(model) for item in catalog)
+        if valid else None
+    )
+    reason = ("backend_unavailable" if data is None else
+              "invalid_catalog" if not valid else
+              "model_missing" if not available else None)
+    return {
+        "ok": reason is None,
+        "ollama": ollama_url,
+        "model": model,
+        "version": __version__,
+        "backend_reachable": data is not None,
+        "catalog_valid": valid,
+        "model_available": available,
+        "reason": reason,
+    }
+
+
 def pick_default_model(ollama_url: str) -> str | None:
     models = list_local_models(ollama_url)
     candidates = []
@@ -225,13 +257,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         path = urllib.parse.urlparse(self.path).path
         if path == "/health":
-            ok = http_get_json(f"{self.config['ollama']}/api/tags") is not None
-            self._send_json(200 if ok else 503, {
-                "ok": ok,
-                "ollama": self.config["ollama"],
-                "model": self.config["model"],
-                "version": __version__,
-            })
+            status = health_status(self.config["ollama"], self.config["model"])
+            self._send_json(200 if status["ok"] else 503, status)
         elif path == "/v1/models":
             models = list_local_models(self.config["ollama"])
             self._send_json(200, {
