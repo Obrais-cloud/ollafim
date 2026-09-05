@@ -1,6 +1,6 @@
 # ollafim
 
-Fill-In-the-Middle (FIM) HTTP server for Ollama. Local Copilot-style autocomplete from any FIM-aware editor plugin — Continue, Cursor Tab, Cody, Tabby, twinny, llama.vscode, Zed AI.
+Fill-In-the-Middle (FIM) HTTP server for Ollama. It accepts source-code prefixes and suffixes at `/v1/completions`. Editor integration must be verified against the specific client and version; an OpenAI-compatible chat setting is not sufficient.
 
 **The missing piece**: Ollama supports a `suffix` field in `/api/generate`, but only when the pulled model's Modelfile defines a `Template` block with `<INSERT>`. Most community models don't. ollafim wraps the FIM tokens correctly per model family (`qwen-coder`, `deepseek-coder`, `codestral`, `codellama`, `starcoder`, `codegemma`) and uses raw mode — works with any model that knows the tokens.
 
@@ -73,57 +73,19 @@ Sync response:
 
 Streaming: `Content-Type: text/event-stream` with `data: {...}` chunks and a final `data: [DONE]`.
 
-## Editor plugins
+## Editor integration
 
-### Continue (`~/.continue/config.json`)
+ollafim accepts `prompt` (source before the cursor) and `suffix` (source after it) at `POST /v1/completions`. It does not implement chat completions. Confirm that the client's autocomplete path uses this request format before changing any provider settings.
 
-```json
-{
-  "tabAutocompleteModel": {
-    "title": "ollafim",
-    "provider": "openai",
-    "apiBase": "http://127.0.0.1:11435/v1",
-    "model": "qwen2.5-coder:1.5b-base",
-    "useLegacyCompletionsEndpoint": true
-  }
-}
-```
+| Client | What to verify |
+| --- | --- |
+| Cursor | Cursor Tab uses its specialized built-in models. Overriding the OpenAI chat base URL does not connect Tab to ollafim, and ollafim cannot serve Cursor's chat requests. Keep chat-provider settings separate. [Cursor API keys](https://docs.cursor.com/settings/api-keys). |
+| Zed | Edit prediction has its own provider configuration. A `language_models.openai` entry configures other AI features, not proof of autocomplete integration. Consult [Zed edit prediction](https://zed.dev/docs/ai/edit-prediction) and validate its request payload before using this wrapper. |
+| Continue, twinny or another FIM extension | Confirm the installed version, autocomplete provider, endpoint and transmitted prefix/suffix. No version-specific copy-and-paste configuration is validated by this repository's tests. |
 
-### Zed (`~/.config/zed/settings.json`)
+If a client already inserts FIM tokens into `prompt`, wrapping that prompt again can produce an incorrect context. Check one synthetic request and the actual inserted result. A successful `/health` request or a generated string does not prove editor integration, syntax validity or useful completion quality.
 
-```json
-{
-  "language_models": {
-    "openai": {
-      "api_url": "http://127.0.0.1:11435/v1",
-      "available_models": [
-        { "name": "qwen2.5-coder:1.5b-base", "max_tokens": 8192 }
-      ]
-    }
-  }
-}
-```
-
-### twinny (VS Code) — extension settings
-
-```json
-{
-  "twinny.fimApiHostname": "127.0.0.1",
-  "twinny.fimApiPort": 11435,
-  "twinny.fimApiPath": "/v1/completions",
-  "twinny.fimModelName": "qwen2.5-coder:1.5b-base",
-  "twinny.fimTemplateFormat": "automatic"
-}
-```
-
-### llama.vscode
-
-Set the API endpoint to `http://127.0.0.1:11435/v1/completions` and the model name to your FIM model.
-
-### Cursor (custom OpenAI base)
-
-In Cursor settings → Models → Override OpenAI Base URL → `http://127.0.0.1:11435/v1`.
-Cursor uses chat completions for most actions; FIM only kicks in for plugins that target `/v1/completions`.
+Use a locally installed FIM-trained model. An unknown model name is not evidence of FIM capability merely because template detection returns a token family. See [INTEGRATION.md](INTEGRATION.md) for service and model verification boundaries.
 
 ## CLI reference
 
