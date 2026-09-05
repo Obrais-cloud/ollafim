@@ -38,7 +38,7 @@ Output:
 | ------ | ------------------ | --------------------------------------------------------------- |
 | POST   | `/v1/completions`  | OpenAI-legacy completions API. Accepts `prompt` + `suffix`.     |
 | GET    | `/v1/models`       | Lists local Ollama models with `fim_supported` flag.            |
-| GET    | `/health`          | Liveness check.                                                 |
+| GET    | `/health`          | Backend catalog and selected-model readiness; no inference.     |
 
 ### `POST /v1/completions`
 

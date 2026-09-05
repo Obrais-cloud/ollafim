@@ -28,7 +28,9 @@ GET /v1/models
 POST /v1/completions
 ```
 
-In the current implementation, `/health` checks whether a JSON response can be obtained from the configured Ollama `/api/tags`. It reports the configured model name but does **not** verify that the model exists, accepts the FIM template, produces valid code or is used by an editor. A timeout is a failed observation, not proof that the adapter process exited.
+`/health` returns HTTP 200 only when the configured Ollama supplies a valid model catalog containing the selected default model. An omitted tag is treated as `:latest`; different tags, namespaces and aliases are not substituted. HTTP 503 distinguishes `backend_unavailable`, `invalid_catalog` and `model_missing` through the `reason` field. The existing `ok`, `ollama`, `model` and `version` fields remain, with `backend_reachable`, `catalog_valid` and `model_available` added. Availability is null when the catalog cannot establish it.
+
+This is a metadata readiness check. It does **not** load a model, prove that it accepts the FIM template, produce code or verify an editor. A timeout is a failed observation, not proof that the adapter process exited. A backend can be reachable while its selected model is unavailable; this must not report healthy.
 
 `/v1/models` lists models reported by that backend. Template detection is heuristic; its `fim_supported` flag is not a model-quality test. Metadata requests do not load models. A completion request does, and normal Ollama retention can leave the model loaded after the response.
 
